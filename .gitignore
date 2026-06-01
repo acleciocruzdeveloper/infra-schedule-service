@@ -1,0 +1,34 @@
+# Local .terraform directories
+**/.terraform/*
+
+.vscode
+.DS_Store
+*.out
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files (contain sensitive data)
+*.tfvars
+*.tfvars.json
+
+# Ignore override files as they may contain sensitive information
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include sensitive CLI configuration
+.terraformrc
+terraform.rc
+
+# Ignore sensitive provider credentials/logs
+.terraform.lock.hcl
+
+# Ignore plan files as they can contain sensitive data in binary form
+*.tfplan
