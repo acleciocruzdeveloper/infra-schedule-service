@@ -3,7 +3,7 @@ name: "Terraform CI/CD"
 on:
   push:
     branches:
-      - feature/*
+      - 'feature/*'
   pull_request:
     branches:
       - develop
@@ -89,16 +89,14 @@ jobs:
             const fs = require('fs');
             const workDir = process.env.WORK_DIR || '.';
             const planFilePath = `${workDir}/plan.txt`;
-
+            
             const formatStatus = '${{ steps.fmt.outcome }}' === 'success' ? '✅' : '❌';
             const initStatus = '${{ steps.init.outcome }}' === 'success' ? '✅' : '❌';
             const validateStatus = '${{ steps.validate.outcome }}' === 'success' ? '✅' : '❌';
             const planStatus = '${{ steps.plan.outcome }}' === 'success' ? '✅' : '❌';
-            
             const planText = fs.existsSync(planFilePath) ? fs.readFileSync(planFilePath, 'utf8') : 'No plan output available';
             
             const output = `#### Terraform Format and Style 🖌 ${formatStatus}
-
             #### Terraform Initialization ⚙️ ${initStatus}
             #### Terraform Validation 🤖 ${validateStatus}
             #### Terraform Plan 📖 ${planStatus}
@@ -108,9 +106,11 @@ jobs:
             \`\`\`hcl\n${planText}\n\`\`\`
             
             </details>`;
+            
             github.rest.issues.createComment({ 
               issue_number: context.issue.number, 
               owner: context.repo.owner, 
               repo: context.repo.repo, 
               body: output 
             })
+

@@ -1,7 +1,7 @@
 locals {
-  project     = "scheduled"
+  project          = "scheduled"
   microserviceName = "queue-worker"
-  cluster_name = "${local.project}-${local.microserviceName}-cluster"
+  cluster_name     = "${local.project}-${local.microserviceName}-cluster"
   common_tags = {
     Terraform    = "true"
     Environment  = local.microserviceName
@@ -10,5 +10,5 @@ locals {
     version      = "1.0.0"
   }
 
-  security_group_name        = "${local.project}-${local.microserviceName}"
+  security_group_name = "${local.project}-${local.microserviceName}"
 }
