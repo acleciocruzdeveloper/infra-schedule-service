@@ -19,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: env.TERRAFORM_WORK_DIR
+        working-directory: ${{ env.TERRAFORM_WORK_DIR }}
 
     steps:
       - name: Checkout
@@ -52,7 +52,7 @@ jobs:
           else
             echo "terraform plan failed or produced no plan.out" > plan.txt
           fi
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Create Pull Request to develop
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/')
@@ -82,15 +82,23 @@ jobs:
       - name: Update Pull Request
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
+        env:
+          WORK_DIR: ${{ env.TERRAFORM_WORK_DIR }}
         with:
           script: |
             const fs = require('fs');
+            const workDir = process.env.WORK_DIR || '.';
+            const planFilePath = `${workDir}/plan.txt`;
+
             const formatStatus = '${{ steps.fmt.outcome }}' === 'success' ? '✅' : '❌';
             const initStatus = '${{ steps.init.outcome }}' === 'success' ? '✅' : '❌';
             const validateStatus = '${{ steps.validate.outcome }}' === 'success' ? '✅' : '❌';
             const planStatus = '${{ steps.plan.outcome }}' === 'success' ? '✅' : '❌';
-            const planText = fs.existsSync('plan.txt') ? fs.readFileSync('plan.txt', 'utf8') : 'No plan output available';
+            
+            const planText = fs.existsSync(planFilePath) ? fs.readFileSync(planFilePath, 'utf8') : 'No plan output available';
+            
             const output = `#### Terraform Format and Style 🖌 ${formatStatus}
+
             #### Terraform Initialization ⚙️ ${initStatus}
             #### Terraform Validation 🤖 ${validateStatus}
             #### Terraform Plan 📖 ${planStatus}
@@ -100,8 +108,9 @@ jobs:
             \`\`\`hcl\n${planText}\n\`\`\`
             
             </details>`;
-            github.rest.issues.createComment({ issue_number: context.issue.number, owner: context.repo.owner, repo: context.repo.repo, body: output })
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
+            github.rest.issues.createComment({ 
+              issue_number: context.issue.number, 
+              owner: context.repo.owner, 
+              repo: context.repo.repo, 
+              body: output 
+            })
