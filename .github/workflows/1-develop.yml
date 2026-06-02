@@ -19,16 +19,16 @@ jobs:
 
     defaults:
       run:
-        working-directory: ${{ env.TERRAFORM_WORK_DIR }}
+        working-directory: ./infra
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.0
+          terraform_version: 1.5.7
 
       - name: Terraform Format
         id: fmt
@@ -45,7 +45,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan -var-file=/dev/terraform.tfvars -out=plan.out -input=false || true
+          terraform plan -var-file=environments/dev/terraform.tfvars -out=plan.out -input=false || true
           if [ -f plan.out ]; then
             terraform show -no-color plan.out > plan.txt
           else
