@@ -15,7 +15,6 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
       TERRAFORM_WORK_DIR: ${{ vars.WORKING_DIRECTORY }}/dev
 
     defaults:
@@ -45,19 +44,51 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        if: github.event_name == 'pull_request'
-        run: terraform plan -input=false
+        run: |
+          terraform plan -out=plan.out -input=false || true
+          if [ -f plan.out ]; then
+            terraform show -no-color plan.out > plan.txt
+          else
+            echo "terraform plan failed or produced no plan.out" > plan.txt
+          fi
         continue-on-error: true
+
+      - name: Create Pull Request to develop
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const branch = github.ref.replace('refs/heads/', '');
+            const base = 'develop';
+            const existing = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${branch}`,
+              base,
+            });
+            if (existing.data.length === 0) {
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Auto PR: ${branch} → ${base}`,
+                head: branch,
+                base,
+                body: `Opening a PR from \`${branch}\` into \`${base}\` for Terraform changes.`,
+              });
+            }
 
       - name: Update Pull Request
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
         with:
           script: |
+            const fs = require('fs');
             const formatStatus = '${{ steps.fmt.outcome }}' === 'success' ? '✅' : '❌';
             const initStatus = '${{ steps.init.outcome }}' === 'success' ? '✅' : '❌';
             const validateStatus = '${{ steps.validate.outcome }}' === 'success' ? '✅' : '❌';
             const planStatus = '${{ steps.plan.outcome }}' === 'success' ? '✅' : '❌';
+            const planText = fs.existsSync('plan.txt') ? fs.readFileSync('plan.txt', 'utf8') : 'No plan output available';
             const output = `#### Terraform Format and Style 🖌 ${formatStatus}
             #### Terraform Initialization ⚙️ ${initStatus}
             #### Terraform Validation 🤖 ${validateStatus}
@@ -65,7 +96,7 @@ jobs:
             
             <details><summary>Show Plan</summary>
             
-            \`\`\`hcl\n${{ steps.plan.outputs.stdout }}\n\`\`\`
+            \`\`\`hcl\n${planText}\n\`\`\`
             
             </details>`;
             github.rest.issues.createComment({ issue_number: context.issue.number, owner: context.repo.owner, repo: context.repo.repo, body: output })
