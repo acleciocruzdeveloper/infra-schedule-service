@@ -15,7 +15,7 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      TERRAFORM_WORK_DIR: ${{ vars.WORKING_DIRECTORY }}/dev
+      TERRAFORM_WORK_DIR: ${{ vars.WORKING_DIRECTORY }}
 
     defaults:
       run:
@@ -45,7 +45,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan -var-file=terraform.tfvars -out=plan.out -input=false || true
+          terraform plan -var-file=environments/dev/terraform.tfvars -out=plan.out -input=false || true
           if [ -f plan.out ]; then
             terraform show -no-color plan.out > plan.txt
           else
