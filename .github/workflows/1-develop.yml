@@ -45,7 +45,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan -out=plan.out -input=false || true
+          terraform plan -var-file=`${{env.TERRAFORM_WORK_DIR}}`/terraform.tfvars -out=plan.out -input=false || true
           if [ -f plan.out ]; then
             terraform show -no-color plan.out > plan.txt
           else
